@@ -1,0 +1,10 @@
+<xSteel>
+	<set xpath="//buff[@name='god']//passive_effect[@name='CarryCapacity']/@value">405</set>
+	<set xpath="//buff[@name='buffDrugSteroids']//passive_effect[@name='CarryCapacity']/@value">405</set>
+	
+	<insertBefore xpath="//passive_effect[@value='@$encumbranceEffect']">
+		<triggered_effect trigger="onSelfBuffUpdate" action="ModifyCVar" cvar="$encumbranceEffect" operation="set" value="0.6" >
+			<requirement name="CVarCompare" cvar="$encumbranceEffect" operation="GT" value="0.6" />
+		</triggered_effect>
+	</insertBefore>	
+</xSteel>

@@ -1,0 +1,10 @@
+{
+  "ShiftClickMovesToCurrentPage": true,
+  "RememberLastOpenedPage": false,
+  "SlotsPerPage": 45,
+  "TabsCount": 9,
+  "WheelPagingEnabled": true,
+  "RequireShiftForWheelPaging": true,
+  "InvertWheelPagingDirection": false,
+  "WheelPagingCooldownSeconds": 0.08
+}

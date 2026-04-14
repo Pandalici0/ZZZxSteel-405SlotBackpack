@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configs>
+  <append xpath="/controls">
+    <backpack_item_stack controller="ItemStack" on_scroll="true" allow_dropping="true" prefix_id="false" show_favorites="false">
+      <rect controller="${controller}" style="hover" width="67" height="67" collider_scale="1.0" on_scroll="${on_scroll}" allow_dropping="${allow_dropping}" prefix_id="${prefix_id}" show_favorites="${show_favorites}" tooltip="{tooltip}" enabled="{# !defined('userlockmode') or !userlockmode}" disableautobackground="true" backgroundcolor="0,0,0,0" backgroundspritename="menu_empty" bordercolor="0,0,0,0" borderspritename="menu_empty" borderthickness="0" on_press="true" sound_volume="0.75" pickup_sound="[pickup_click]" place_sound="[place_click]" hover_icon_grow="1.5" background_color="0,0,0,0" highlight_color="[hoverColor]" holding_color="235,235,235,255" select_color="[beige]" press_color="120,120,120,255" final_pressed_color="[lightGrey]">
+        <sprite depth="1" name="itemQualityBackground" sprite="menu_empty2px" pos="0,0" color="14,14,14,255" type="sliced" fillcenter="true" width="67" height="67" />
+        <sprite depth="2" name="backgroundTexture" sprite="menu_empty2px" pos="3,-3" color="26,26,26,255" type="sliced" fillcenter="true" width="61" height="61" />
+        <sprite depth="3" name="highlightOverlay" sprite="menu_empty2px" pos="1,-1" color="90,90,90,210" type="sliced" fillcenter="false" width="65" height="65" visible="{ishovered}" />
+        <sprite depth="3" name="baseBorderTop" sprite="menu_empty" pos="0,0" color="90,90,90,230" type="sliced" fillcenter="true" width="67" height="1" />
+        <sprite depth="3" name="baseBorderBottom" sprite="menu_empty" pos="0,-66" color="90,90,90,230" type="sliced" fillcenter="true" width="67" height="1" />
+        <sprite depth="3" name="baseBorderLeft" sprite="menu_empty" pos="0,0" color="90,90,90,230" type="sliced" fillcenter="true" width="1" height="67" />
+        <sprite depth="3" name="baseBorderRight" sprite="menu_empty" pos="66,0" color="90,90,90,230" type="sliced" fillcenter="true" width="1" height="67" />
+        <sprite depth="4" name="activeBorderTop" sprite="menu_empty" pos="0,0" color="{selectionbordercolor}" type="sliced" fillcenter="true" width="67" height="1" />
+        <sprite depth="4" name="activeBorderBottom" sprite="menu_empty" pos="0,-66" color="{selectionbordercolor}" type="sliced" fillcenter="true" width="67" height="1" />
+        <sprite depth="4" name="activeBorderLeft" sprite="menu_empty" pos="0,0" color="{selectionbordercolor}" type="sliced" fillcenter="true" width="1" height="67" />
+        <sprite depth="4" name="activeBorderRight" sprite="menu_empty" pos="66,0" color="{selectionbordercolor}" type="sliced" fillcenter="true" width="1" height="67" />
+        <sprite depth="5" name="itemIcon" width="57" height="57" atlas="ItemIconAtlas" sprite="{itemicon}" pivot="center" foregroundlayer="true" color="{iconcolor}" pos="33,-33" visible="{showicon}" />
+        <sprite depth="8" name="favoriteIcon" width="18" height="18" sprite="server_favorite" pos="4,-4" foregroundlayer="true" visible="{isfavorite}" />
+        <sprite depth="8" name="lockTypeIcon" width="18" height="18" sprite="{locktypeicon}" pos="4,-4" foregroundlayer="true" />
+        <sprite depth="8" name="itemtypeicon" width="18" height="18" sprite="ui_game_symbol_{itemtypeicon}" pos="4,-4" foregroundlayer="true" visible="{hasitemtypeicon}" color="{itemtypeicontint}" />
+        <sprite depth="6" name="durabilityBarBg" sprite="menu_empty3px" color="[darkGrey]" type="sliced" foregroundlayer="true" visible="{hasdurability}" width="65" height="5" pos="1,-56" />
+        <filledsprite depth="7" name="durabilityBar" sprite="menu_empty2px" color="{durabilitycolor}" fill="{durabilityfill}" type="filled" foregroundlayer="true" visible="{hasdurability}" width="65" height="5" pos="1,-56" />
+        <label depth="7" name="stackValue" height="22" text="{itemcount}" font_size="19" effect="outline" justify="{#hasdurability ? 'Center' : 'Right'}" pos="3,-53" width="61" />
+        <label depth="7" name="timer" height="18" font_size="18" justify="center" pivot="center" color="[beige]" effect="outline" pos="33,-33" width="60" />
+        <sprite depth="9" name="cancel" sprite="ui_game_symbol_x" color="255,0,0,255" type="sliced" visible="{# ishovered and islocked}" foregroundlayer="true" width="63" height="63" pos="2,-2" />
+        <sprite depth="13" name="assembleIcon" sprite="{stacklockicon}" color="{stacklockcolor}" visible="{isassemblelocked}" pos="18,-18" foregroundlayer="true" size="42,42" />
+        <sprite depth="14" name="quickswapIcon" size="30,30" sprite="server_refresh" pos="49,-4" foregroundlayer="true" visible="{isQuickSwap}" />
+        <button name="rectSlotLock" depth="15" style="press, hover" width="67" height="67" visible="{# defined('userlockmode') and userlockmode}" sprite="" hoverscale="1" use_selection_box="true">
+          <sprite depth="16" name="slotLockIcon" width="16" height="16" sprite="{# userlockedslot ? 'ui_game_symbol_lock' : 'ui_game_symbol_unlock' }" pos="50,-16" pivot="center" color="{# userlockedslot ? '255,255,255' : '180,180,180' }" foregroundlayer="true" globalopacitymod="1" />
+        </button>
+        <sprite depth="15" name="iconSlotLock" width="16" height="16" sprite="ui_game_symbol_lock" pos="50,-16" pivot="center" visible="{# defined('userlockmode') and !userlockmode and userlockedslot}" color="[white]" foregroundlayer="true" globalopacitymod="0.9" />
+      </rect>
+    </backpack_item_stack>
+  </append>
+</configs>

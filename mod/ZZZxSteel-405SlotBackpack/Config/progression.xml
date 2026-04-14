@@ -1,0 +1,4 @@
+<xSteel>
+	<!-- Pack Mule progression for the expanded backpack. -->
+	<set xpath="//perk[@name='perkPackMule']/effect_group/passive_effect[@name='CarryCapacity' and @value]/@value">18,108,198,288,378</set>
+</xSteel>
