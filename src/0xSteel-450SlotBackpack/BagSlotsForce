@@ -1,0 +1,112 @@
+using System;
+using System.Reflection;
+using HarmonyLib;
+using UnityEngine;
+
+namespace SteelUI450SlotsBackpack;
+
+[HarmonyPatch]
+internal static class BagSlotsForce
+{
+    private static FieldInfo _bagItemsField;
+
+    private static FieldInfo BagItemsField
+    {
+        get
+        {
+            if (_bagItemsField == null)
+                _bagItemsField = AccessTools.Field(typeof(Bag), "items");
+
+            return _bagItemsField;
+        }
+    }
+
+    private static int DesiredSlots
+    {
+        get
+        {
+            return 405;
+        }
+    }
+
+    private static void EnsureBagSize(Bag bag)
+    {
+        try
+        {
+            if (bag == null || BagItemsField == null)
+                return;
+
+            ItemStack[] oldItems = BagItemsField.GetValue(bag) as ItemStack[];
+            int desired = DesiredSlots;
+
+            if (oldItems != null && oldItems.Length >= desired)
+                return;
+
+            ItemStack[] newItems = ItemStack.CreateArray(desired);
+
+            if (oldItems != null)
+            {
+                int copy = Math.Min(oldItems.Length, newItems.Length);
+                for (int i = 0; i < copy; i++)
+                    newItems[i] = oldItems[i] != null ? oldItems[i].Clone() : ItemStack.Empty.Clone();
+            }
+
+            BagItemsField.SetValue(bag, newItems);
+
+            Debug.Log("[Steel] Bag resized to " + desired + " slots.");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[Steel] BagSlotsForce EnsureBagSize failed: " + e);
+        }
+    }
+
+    [HarmonyPatch(typeof(Bag), "checkBagAssigned")]
+    [HarmonyPrefix]
+    private static void Bag_CheckBagAssigned_Prefix(Bag __instance, ref int slotCount)
+    {
+        int desired = DesiredSlots;
+
+        if (slotCount < desired)
+            slotCount = desired;
+
+        EnsureBagSize(__instance);
+    }
+
+    [HarmonyPatch(typeof(Bag), "Clear")]
+    [HarmonyPostfix]
+    private static void Bag_Clear_Postfix(Bag __instance)
+    {
+        EnsureBagSize(__instance);
+    }
+
+    [HarmonyPatch(typeof(XUiC_Backpack), "OnOpen")]
+    [HarmonyPostfix]
+    private static void XUiC_Backpack_OnOpen_Postfix(XUiC_Backpack __instance)
+    {
+        try
+        {
+            Bag bag = __instance?.xui?.playerUI?.entityPlayer?.bag;
+            EnsureBagSize(bag);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[Steel] Backpack.OnOpen failed: " + e);
+        }
+    }
+
+    [HarmonyPatch(typeof(XUiC_BackpackWindow), "OnOpen")]
+    [HarmonyPostfix]
+    private static void XUiC_BackpackWindow_OnOpen_Postfix(XUiC_BackpackWindow __instance)
+    {
+        try
+        {
+            Bag bag = __instance?.xui?.playerUI?.entityPlayer?.bag;
+            EnsureBagSize(bag);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[Steel] BackpackWindow.OnOpen failed: " + e);
+        }
+    }
+}
