@@ -8,216 +8,212 @@ namespace SteelUI450SlotsBackpack;
 [HarmonyPatch]
 public static class BackpackPatches
 {
-	private static readonly FieldRef<Bag, ItemStack[]> BagItemsRef = AccessTools.FieldRefAccess<Bag, ItemStack[]>("items");
+    private static float _nextAllowedWheelPagingTime;
 
-	private static readonly FieldRef<XUiC_BackpackWindow, EntityPlayerLocal> BackpackWindowLocalPlayerRef = AccessTools.FieldRefAccess<XUiC_BackpackWindow, EntityPlayerLocal>("localPlayer");
+    private static int DesiredSlots => ModApi.Config?.TotalSlots ?? 405;
 
-	private static float _nextAllowedWheelPagingTime;
+    private static bool IsShiftHeld()
+    {
+        return Input.GetKey((KeyCode)304) || Input.GetKey((KeyCode)303);
+    }
 
-	private static int DesiredSlots => ModApi.Config?.TotalSlots ?? 405;
+    private static bool ShouldHandleWheelPaging(XUiC_TabSelector tabSelector)
+    {
+        BackpackConfig config = ModApi.Config;
+        if (config == null || !config.WheelPagingEnabled)
+            return false;
 
-	private static bool IsShiftHeld()
-	{
-		return Input.GetKey((KeyCode)304) || Input.GetKey((KeyCode)303);
-	}
+        if (tabSelector == null)
+            return false;
 
-	private static bool ShouldHandleWheelPaging(XUiC_TabSelector tabSelector)
-	{
-		BackpackConfig config = ModApi.Config;
-		if (config == null || !config.WheelPagingEnabled)
-		{
-			return false;
-		}
-		if (tabSelector == null)
-		{
-			return false;
-		}
-		if (config.RequireShiftForWheelPaging && !IsShiftHeld())
-		{
-			return false;
-		}
-		if (Time.unscaledTime < _nextAllowedWheelPagingTime)
-		{
-			return false;
-		}
-		return true;
-	}
+        if (config.RequireShiftForWheelPaging && !IsShiftHeld())
+            return false;
 
-	private static ItemStack[] NormalizeSlots(ItemStack[] original, int desired)
-	{
-		desired = Math.Max(1, desired);
-		if (original == null)
-		{
-			return ItemStack.CreateArray(desired);
-		}
-		if (original.Length == desired)
-		{
-			return original;
-		}
-		ItemStack[] array = ItemStack.CreateArray(desired);
-		int num = Math.Min(original.Length, desired);
-		for (int i = 0; i < num; i++)
-		{
-			array[i] = ((original[i] != null) ? original[i].Clone() : ItemStack.Empty.Clone());
-		}
-		return array;
-	}
+        if (Time.unscaledTime < _nextAllowedWheelPagingTime)
+            return false;
 
-	private static void EnsureBagSize(Bag bag)
-	{
-		try
-		{
-			ItemStack[] array = BagItemsRef.Invoke(bag);
-			ItemStack[] array2 = NormalizeSlots(array, DesiredSlots);
-			if (array != array2)
-			{
-				BagItemsRef.Invoke(bag) = array2;
-			}
-		}
-		catch (Exception arg)
-		{
-			Debug.LogError((object)$"[Steel405 Rebuild] EnsureBagSize failed: {arg}");
-		}
-	}
+        return true;
+    }
 
-	[HarmonyPatch(typeof(Bag), "checkBagAssigned")]
-	[HarmonyPrefix]
-	private static void Bag_CheckBagAssigned_Prefix(ref int slotCount)
-	{
-		if (slotCount < DesiredSlots)
-		{
-			slotCount = DesiredSlots;
-		}
-	}
+    private static ItemStack[] NormalizeSlots(ItemStack[] original, int desired)
+    {
+        desired = Math.Max(1, desired);
 
-	[HarmonyPatch(typeof(XUiC_Backpack), "OnOpen")]
-	[HarmonyPrefix]
-	private static void XUiC_Backpack_OnOpen_Prefix(XUiC_Backpack __instance)
-	{
-		//IL_005f: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0065: Expected O, but got Unknown
-		object obj;
-		if (__instance == null)
-		{
-			obj = null;
-		}
-		else
-		{
-			XUi xui = ((XUiController)__instance).xui;
-			if ((Object)(object)xui == (Object)null)
-			{
-				obj = null;
-			}
-			else
-			{
-				LocalPlayerUI playerUI = xui.playerUI;
-				obj = (((Object)(object)playerUI != (Object)null && (Object)(object)playerUI.entityPlayer != (Object)null) ? ((EntityAlive)playerUI.entityPlayer).bag : null);
-			}
-		}
-		Bag val = (Bag)obj;
-		if (val != null)
-		{
-			EnsureBagSize(val);
-		}
-	}
+        if (original == null)
+            return ItemStack.CreateArray(desired);
 
-	[HarmonyPatch(typeof(XUiC_BackpackWindow), "OnOpen")]
-	[HarmonyPrefix]
-	private static void XUiC_BackpackWindow_OnOpen_Prefix(XUiC_BackpackWindow __instance)
-	{
-		//IL_004c: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0052: Expected O, but got Unknown
-		try
-		{
-			object obj;
-			if (__instance == null)
-			{
-				obj = null;
-			}
-			else
-			{
-				XUi xui = ((XUiController)__instance).xui;
-				if ((Object)(object)xui == (Object)null)
-				{
-					obj = null;
-				}
-				else
-				{
-					LocalPlayerUI playerUI = xui.playerUI;
-					obj = (((Object)(object)playerUI != (Object)null) ? playerUI.entityPlayer : null);
-				}
-			}
-			EntityPlayerLocal val = (EntityPlayerLocal)obj;
-			if (val != null)
-			{
-				BackpackWindowLocalPlayerRef.Invoke(__instance) = val;
-				if (((EntityAlive)val).bag != null)
-				{
-					EnsureBagSize(((EntityAlive)val).bag);
-				}
-			}
-		}
-		catch (Exception arg)
-		{
-			Debug.LogError((object)$"[Steel405 Rebuild] BackpackWindow.OnOpen sync failed: {arg}");
-		}
-	}
+        if (original.Length == desired)
+            return original;
 
-	private static void XUiM_PlayerInventory_Ctor_Postfix(XUiM_PlayerInventory __instance, EntityPlayerLocal _player)
-	{
-		try
-		{
-			if ((Object)(object)_player != (Object)null && ((EntityAlive)_player).bag != null)
-			{
-				EnsureBagSize(((EntityAlive)_player).bag);
-			}
-		}
-		catch (Exception arg)
-		{
-			Debug.LogError((object)$"[Steel405 Rebuild] XUiM_PlayerInventory ctor sync failed: {arg}");
-		}
-	}
+        ItemStack[] array = ItemStack.CreateArray(desired);
+        int num = Math.Min(original.Length, desired);
 
-	[HarmonyPatch(typeof(XUiC_TabSelector), "Update")]
-	[HarmonyPostfix]
-	private static void XUiC_TabSelector_Update_Postfix(XUiC_TabSelector __instance)
-	{
-		//IL_0014: Unknown result type (might be due to invalid IL or missing references)
-		try
-		{
-			if (!ShouldHandleWheelPaging(__instance))
-			{
-				return;
-			}
-			float num = Input.mouseScrollDelta.y;
-			if (Mathf.Abs(num) < 0.01f)
-			{
-				num = Input.GetAxis("Mouse ScrollWheel");
-			}
-			if (!(Mathf.Abs(num) < 0.01f))
-			{
-				int num2 = ((!(num > 0f)) ? 1 : (-1));
-				if (ModApi.Config.InvertWheelPagingDirection)
-				{
-					num2 *= -1;
-				}
-				MethodInfo methodInfo = AccessTools.Method(typeof(XUiC_TabSelector), "ToggleCategory", new Type[2]
-				{
-					typeof(int),
-					typeof(bool)
-				}, (Type[])null);
-				if (methodInfo == null)
-				{
-					Debug.LogWarning((object)"[Steel405 Rebuild] Could not find XUiC_TabSelector.ToggleCategory(int, bool) for wheel paging.");
-					return;
-				}
-				methodInfo.Invoke(__instance, new object[2] { num2, true });
-				_nextAllowedWheelPagingTime = Time.unscaledTime + Mathf.Max(0.01f, ModApi.Config.WheelPagingCooldownSeconds);
-			}
-		}
-		catch (Exception arg)
-		{
-			Debug.LogError((object)$"[Steel405 Rebuild] Wheel paging failed: {arg}");
-		}
-	}
+        for (int i = 0; i < num; i++)
+            array[i] = original[i] != null ? original[i].Clone() : ItemStack.Empty.Clone();
+
+        return array;
+    }
+
+    private static FieldInfo FindField(Type type, string fieldName)
+    {
+        while (type != null)
+        {
+            FieldInfo field = AccessTools.Field(type, fieldName);
+            if (field != null)
+                return field;
+
+            type = type.BaseType;
+        }
+
+        return null;
+    }
+
+    private static ItemStack[] GetBagItems(Bag bag)
+    {
+        if (bag == null)
+            return null;
+
+        try
+        {
+            FieldInfo field = FindField(bag.GetType(), "items");
+            return field?.GetValue(bag) as ItemStack[];
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] GetBagItems failed: {e}");
+            return null;
+        }
+    }
+
+    private static void SetBagItems(Bag bag, ItemStack[] items)
+    {
+        if (bag == null)
+            return;
+
+        try
+        {
+            FieldInfo field = FindField(bag.GetType(), "items");
+            field?.SetValue(bag, items);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] SetBagItems failed: {e}");
+        }
+    }
+
+    private static void SetBackpackWindowLocalPlayer(XUiC_BackpackWindow window, EntityPlayerLocal player)
+    {
+        if (window == null)
+            return;
+
+        try
+        {
+            FieldInfo field = FindField(window.GetType(), "localPlayer");
+            field?.SetValue(window, player);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] SetBackpackWindowLocalPlayer failed: {e}");
+        }
+    }
+
+    private static void EnsureBagSize(Bag bag)
+    {
+        try
+        {
+            ItemStack[] currentItems = GetBagItems(bag);
+            ItemStack[] resizedItems = NormalizeSlots(currentItems, DesiredSlots);
+
+            if (!ReferenceEquals(currentItems, resizedItems))
+                SetBagItems(bag, resizedItems);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] EnsureBagSize failed: {e}");
+        }
+    }
+
+    [HarmonyPatch(typeof(Bag), "checkBagAssigned")]
+    [HarmonyPrefix]
+    private static void Bag_CheckBagAssigned_Prefix(ref int slotCount)
+    {
+        if (slotCount < DesiredSlots)
+            slotCount = DesiredSlots;
+    }
+
+    [HarmonyPatch(typeof(XUiC_Backpack), "OnOpen")]
+    [HarmonyPrefix]
+    private static void XUiC_Backpack_OnOpen_Prefix(XUiC_Backpack __instance)
+    {
+        try
+        {
+            var bag = __instance?.xui?.playerUI?.entityPlayer?.bag;
+            if (bag != null)
+                EnsureBagSize(bag);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] OnOpen failed: {e}");
+        }
+    }
+
+    [HarmonyPatch(typeof(XUiC_BackpackWindow), "OnOpen")]
+    [HarmonyPrefix]
+    private static void XUiC_BackpackWindow_OnOpen_Prefix(XUiC_BackpackWindow __instance)
+    {
+        try
+        {
+            var player = __instance?.xui?.playerUI?.entityPlayer;
+            if (player != null)
+            {
+                SetBackpackWindowLocalPlayer(__instance, player);
+                if (player.bag != null)
+                    EnsureBagSize(player.bag);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] BackpackWindow.OnOpen failed: {e}");
+        }
+    }
+
+    [HarmonyPatch(typeof(XUiC_TabSelector), "Update")]
+    [HarmonyPostfix]
+    private static void XUiC_TabSelector_Update_Postfix(XUiC_TabSelector __instance)
+    {
+        try
+        {
+            if (!ShouldHandleWheelPaging(__instance))
+                return;
+
+            float delta = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(delta) < 0.01f)
+                delta = Input.GetAxis("Mouse ScrollWheel");
+
+            if (Mathf.Abs(delta) < 0.01f)
+                return;
+
+            int direction = delta > 0 ? -1 : 1;
+
+            if (ModApi.Config != null && ModApi.Config.InvertWheelPagingDirection)
+                direction *= -1;
+
+            MethodInfo method = AccessTools.Method(
+                typeof(XUiC_TabSelector),
+                "ToggleCategory",
+                new Type[] { typeof(int), typeof(bool) });
+
+            method?.Invoke(__instance, new object[] { direction, true });
+
+            float cooldown = 0.05f;
+            if (ModApi.Config != null)
+                cooldown = Mathf.Max(0.01f, ModApi.Config.WheelPagingCooldownSeconds);
+
+            _nextAllowedWheelPagingTime = Time.unscaledTime + cooldown;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Steel Backpack] Wheel paging failed: {e}");
+        }
+    }
 }
